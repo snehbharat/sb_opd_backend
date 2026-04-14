@@ -421,4 +421,6 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
             @Param("endMs") Long endMs
     );
 
+    Optional<Doctor> findByUserId(Long userId);
+
 }

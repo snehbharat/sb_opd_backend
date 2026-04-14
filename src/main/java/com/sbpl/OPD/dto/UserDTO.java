@@ -46,6 +46,8 @@ public class UserDTO {
     private Long companyId;
     private Long branchId;
 
+    private Long doctorId;
+
     private String companyName;
     private String branchName;
 }

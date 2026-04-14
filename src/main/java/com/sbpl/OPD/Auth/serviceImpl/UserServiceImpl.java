@@ -14,8 +14,10 @@ import com.sbpl.OPD.Auth.utils.JwtService;
 import com.sbpl.OPD.dto.UserDTO;
 import com.sbpl.OPD.model.Branch;
 import com.sbpl.OPD.model.CompanyProfile;
+import com.sbpl.OPD.model.Doctor;
 import com.sbpl.OPD.repository.BranchRepository;
 import com.sbpl.OPD.repository.CompanyProfileRepository;
+import com.sbpl.OPD.repository.DoctorRepository;
 import com.sbpl.OPD.response.BaseResponse;
 import com.sbpl.OPD.utils.DbUtill;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private DoctorRepository doctorRepository;
 
     @Autowired
     private JwtService jwtService;
@@ -707,6 +712,16 @@ public class UserServiceImpl implements UserService {
         if (user.getBranch() != null) {
             dto.setBranchId(user.getBranch().getId());
             dto.setBranchName(user.getBranch().getBranchName());
+        }
+
+        if (user.getRole() == UserRole.DOCTOR) {
+            try {
+                Optional<Doctor> doctorOpt = doctorRepository.findByUserId(user.getId());
+                doctorOpt.ifPresent(doctor -> dto.setDoctorId(doctor.getId()));
+            } catch (Exception e) {
+                // Log error but don't fail the conversion
+                System.err.println("Error fetching doctor ID for user " + user.getId() + ": " + e.getMessage());
+            }
         }
 
         return dto;
