@@ -53,4 +53,6 @@ public class DoctorResponseDTO {
     private Long coreExpertiseId;
     private String coreExpertiseName;
     private String coreExpertiseCategory;
+
+    private DoctorScheduleDaysDTO scheduleDays;
 }

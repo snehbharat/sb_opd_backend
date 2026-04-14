@@ -65,4 +65,12 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     @Query("SELECT s FROM Schedule s WHERE s.doctor.branch.id = :branchId AND s.doctor.id = :doctorId")
     Page<Schedule> findByBranchIdAndDoctorId(@Param("branchId") Long branchId, @Param("doctorId") Long doctorId, Pageable pageable);
 
+    @Query("""
+                SELECT DISTINCT s.dayOfWeek 
+                FROM Schedule s 
+                WHERE s.doctor.id = :doctorId 
+                  AND s.isAvailable = true 
+                  AND s.status <> ScheduleStatus.INACTIVE
+            """)
+    List<DayOfWeek> findActiveScheduleDays(Long doctorId);
 }

@@ -39,4 +39,6 @@ public interface DoctorResponseDTOForSearch {
     String getCoreExpertiseCategory();
     
     Integer getExperienceYears();
+
+    DoctorScheduleDaysDTO getScheduleDays();
 }

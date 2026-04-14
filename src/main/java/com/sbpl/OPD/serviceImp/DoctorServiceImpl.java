@@ -8,17 +8,21 @@ import com.sbpl.OPD.Auth.serviceImpl.UserServiceImpl;
 import com.sbpl.OPD.dto.Doctor.request.DoctorDTO;
 import com.sbpl.OPD.dto.Doctor.response.DoctorMinimalDTO;
 import com.sbpl.OPD.dto.Doctor.response.DoctorResponseDTO;
+import com.sbpl.OPD.dto.Doctor.response.DoctorScheduleDaysDTO;
 import com.sbpl.OPD.dto.UserDTO;
 import com.sbpl.OPD.enums.DoctorSearchType;
+import com.sbpl.OPD.enums.ScheduleStatus;
 import com.sbpl.OPD.model.Branch;
 import com.sbpl.OPD.model.CompanyProfile;
 import com.sbpl.OPD.model.Doctor;
 import com.sbpl.OPD.model.DoctorCoreExpertise;
+import com.sbpl.OPD.model.Schedule;
 import com.sbpl.OPD.repository.BranchRepository;
 import com.sbpl.OPD.repository.CompanyProfileRepository;
 import com.sbpl.OPD.repository.DepartmentRepository;
 import com.sbpl.OPD.repository.DoctorCoreExpertiseRepository;
 import com.sbpl.OPD.repository.DoctorRepository;
+import com.sbpl.OPD.repository.ScheduleRepository;
 import com.sbpl.OPD.response.BaseResponse;
 import com.sbpl.OPD.service.DoctorService;
 import com.sbpl.OPD.utils.DbUtill;
@@ -37,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -65,12 +70,13 @@ public class DoctorServiceImpl implements DoctorService {
     private final RbacUtil rbacUtil;
     private final DoctorCoreExpertiseRepository doctorCoreExpertiseRepository;
     private final DepartmentRepository departmentRepository;
+    private final ScheduleRepository scheduleRepository;
 
     public DoctorServiceImpl(
             DoctorRepository doctorRepository,
             UserRepository userRepository,
             BaseResponse baseResponse, UserServiceImpl userService, CompanyProfileRepository companyRepository, BranchRepository branchRepository, RbacUtil rbacUtil, DoctorCoreExpertiseRepository doctorCoreExpertiseRepository,
-            DepartmentRepository departmentRepository
+            DepartmentRepository departmentRepository, ScheduleRepository scheduleRepository
     ) {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
@@ -81,6 +87,7 @@ public class DoctorServiceImpl implements DoctorService {
         this.rbacUtil = rbacUtil;
         this.doctorCoreExpertiseRepository = doctorCoreExpertiseRepository;
         this.departmentRepository = departmentRepository;
+        this.scheduleRepository = scheduleRepository;
     }
 
     @Transactional
@@ -285,7 +292,7 @@ public class DoctorServiceImpl implements DoctorService {
                 DoctorCoreExpertise coreExpertise = doctorCoreExpertiseRepository.findById(dto.getCoreExpertiseId())
                         .orElseThrow(() -> new IllegalArgumentException("Invalid core expertise ID"));
                 doctor.setCoreExpertise(coreExpertise);
-            } else if (dto.getCoreExpertiseId() == null && doctor.getCoreExpertise() != null) {
+            } else if (doctor.getCoreExpertise() != null) {
                 // Allow removing core expertise
                 doctor.setCoreExpertise(null);
             }
@@ -675,6 +682,7 @@ public class DoctorServiceImpl implements DoctorService {
             dto.setCoreExpertiseCategory(doctor.getCoreExpertise().getCategory());
         }
 
+        populateScheduleDays(doctor, dto);
         return dto;
     }
 
@@ -832,4 +840,41 @@ public class DoctorServiceImpl implements DoctorService {
         
         logger.debug("Department validation passed | departmentName={}, branchId={}", departmentName, branchId);
     }
+
+
+    /**
+     * Populate schedule days for a doctor based on their active schedules
+     * @param doctor The doctor entity
+     * @param dto The response DTO to populate
+     */
+    private void populateScheduleDays(Doctor doctor, DoctorResponseDTO dto) {
+        try {
+
+            List<DayOfWeek> activeDays = scheduleRepository.findActiveScheduleDays(doctor.getId());
+
+            DoctorScheduleDaysDTO scheduleDays = new DoctorScheduleDaysDTO();
+
+            for (DayOfWeek day : activeDays) {
+                switch (day) {
+                    case MONDAY -> scheduleDays.setMonday(true);
+                    case TUESDAY -> scheduleDays.setTuesday(true);
+                    case WEDNESDAY -> scheduleDays.setWednesday(true);
+                    case THURSDAY -> scheduleDays.setThursday(true);
+                    case FRIDAY -> scheduleDays.setFriday(true);
+                    case SATURDAY -> scheduleDays.setSaturday(true);
+                    case SUNDAY -> scheduleDays.setSunday(true);
+                }
+            }
+
+            dto.setScheduleDays(scheduleDays);
+
+        } catch (Exception e) {
+            logger.error("Error populating schedule days for doctorId={}", doctor.getId(), e);
+
+            dto.setScheduleDays(new DoctorScheduleDaysDTO(
+                    false, false, false, false, false, false, false
+            ));
+        }
+    }
+
 }
