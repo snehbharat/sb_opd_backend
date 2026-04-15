@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 /**
  * Customer registration request DTO.
  *
@@ -57,6 +59,12 @@ public class CustomerRegistrationDto {
     private Long branchId;
 
     private Long departmentId;
+
+    private Boolean isRegistrationFee;
+
+    private BigDecimal paidAmount;
+
+    private String paymentType;
 
 }
 

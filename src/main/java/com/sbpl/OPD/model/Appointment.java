@@ -131,6 +131,9 @@ public class Appointment extends BaseEntity {
     @Column(name = "no_show_recorded_at")
     private LocalDateTime noShowRecordedAt;
 
+    @Column(name = "appointment_type")
+    private String appointmentType;
+
     @Column(name = "no_show_recorded_by")
     private Long noShowRecordedBy;
 

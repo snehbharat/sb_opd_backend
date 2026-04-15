@@ -43,7 +43,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
       c.totalPaidAmount as totalPaidAmount,
       c.totalDueAmount as totalDueAmount,
       c.totalBillAmount as totalBillAmount,
-      CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+      CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+      (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+      (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+      (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+      (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       ORDER BY c.createdAt DESC
       """)
@@ -96,7 +100,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
              c.totalBillAmount as totalBillAmount,
-             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE c.phoneNumber = :phoneNumber
       AND c.company.id = :companyId
@@ -115,7 +123,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
              c.totalBillAmount as totalBillAmount,
-             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE c.phoneNumber = :phoneNumber
       AND c.branch.id = :branchId
@@ -134,7 +146,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
              c.totalBillAmount as totalBillAmount,
-             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE c.uhid = :uhid
       AND c.company.id = :companyId
@@ -153,7 +169,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
              c.totalBillAmount as totalBillAmount,
-             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE c.uhid = :uhid
       AND c.branch.id = :branchId
@@ -172,7 +192,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
              c.totalBillAmount as totalBillAmount,
-             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE c.email = :email
       AND c.company.id = :companyId
@@ -191,7 +215,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
              c.totalBillAmount as totalBillAmount,
-             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE c.email = :email
       AND c.branch.id = :branchId
@@ -210,7 +238,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
              c.totalBillAmount as totalBillAmount,
-             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE (LOWER(c.firstName) LIKE LOWER(CONCAT('%', :name, '%'))
           OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :name, '%')))
@@ -230,7 +262,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
              c.totalBillAmount as totalBillAmount,
-             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId
+             CASE WHEN c.department IS NOT NULL THEN c.department.id ELSE NULL END as departmentId,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE (LOWER(c.firstName) LIKE LOWER(CONCAT('%', :name, '%'))
           OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :name, '%')))
@@ -258,7 +294,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.department.id as departmentId,
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
-             c.totalBillAmount as totalBillAmount
+             c.totalBillAmount as totalBillAmount,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE c.company.id = :companyId
       AND (
@@ -291,7 +331,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
              c.department.id as departmentId,
              c.totalPaidAmount as totalPaidAmount,
              c.totalDueAmount as totalDueAmount,
-             c.totalBillAmount as totalBillAmount
+             c.totalBillAmount as totalBillAmount,
+             (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+             (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+             (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+             (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
       FROM Customer c
       WHERE c.branch.id = :branchId
       AND (
@@ -384,7 +428,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
               c.department.id as departmentId,
               c.totalPaidAmount as totalPaidAmount,
               c.totalDueAmount as totalDueAmount,
-              c.totalBillAmount as totalBillAmount
+              c.totalBillAmount as totalBillAmount,
+              (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+              (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+              (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+              (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
           FROM Customer c
           WHERE c.company.id = :companyId
           ORDER BY c.createdAt DESC
@@ -412,7 +460,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
               c.department.id as departmentId,
               c.totalPaidAmount as totalPaidAmount,
               c.totalDueAmount as totalDueAmount,
-              c.totalBillAmount as totalBillAmount
+              c.totalBillAmount as totalBillAmount,
+              (SELECT a.appointmentNumber FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentNumber,
+              (SELECT a.appointmentDate FROM Appointment a WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastAppointmentDate,
+              (SELECT d.doctorName FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorName,
+              (SELECT d.id FROM Appointment a JOIN a.doctor d WHERE a.patient.id = c.id ORDER BY a.appointmentDate DESC LIMIT 1) as lastDoctorId
           FROM Customer c
           WHERE c.branch.id = :branchId
           ORDER BY c.createdAt DESC

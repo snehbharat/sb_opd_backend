@@ -91,4 +91,7 @@ public class Customer extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id")
     private Branch branch;
+
+    @Column(name = "is_registration_fee")
+    private Boolean isRegistrationFee = false;
 }

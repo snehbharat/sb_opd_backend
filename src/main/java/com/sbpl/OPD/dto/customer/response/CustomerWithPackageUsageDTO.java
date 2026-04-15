@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -28,4 +29,8 @@ public class CustomerWithPackageUsageDTO {
     private BigDecimal totalDueAmount;
     private BigDecimal totalBillAmount;
     private PackageUsageInfoDTO packageUsageInfo;
+    private String lastAppointmentNumber;
+    private LocalDateTime lastAppointmentDate;
+    private String lastDoctorName;
+    private Long lastDoctorId;
 }

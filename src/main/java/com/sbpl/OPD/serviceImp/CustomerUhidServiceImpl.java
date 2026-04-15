@@ -59,7 +59,7 @@ public class CustomerUhidServiceImpl implements CustomerUhidService {
         // Since customer doesn't exist yet when generating UHID, 
         // we'll use a default approach here, or this would be called after customer creation
         // For now, we'll return a default format
-        return "HMS_CUST_" + String.format("%06d", customerId);
+        return "HMS_PAT_" + String.format("%06d", customerId);
     }
     
     private String getCompanyPrefix(Long companyId) {

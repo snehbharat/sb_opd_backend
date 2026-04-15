@@ -58,6 +58,8 @@ public class AppointmentWithSlotDTO {
     private Boolean followUpRequired = false;
 
     private Long companyId;
+
+    private String appointmentType;
     
     private Long branchId;
     

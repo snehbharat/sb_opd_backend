@@ -776,6 +776,52 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
     }
 
+    @Override
+    public ResponseEntity<?> updateAppointmentTypeWithReasonAndNotes(
+            Long id, String appointmentType, String notes) {
+
+        logger.info(
+                "Request received to update appointment Type [appointmentId={}, status={}]",
+                id, appointmentType
+        );
+
+        try {
+            Appointment appointment = appointmentRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+
+            appointment.setAppointmentType(appointmentType);
+            appointment.setUpdatedAt(new Date());
+            appointment.setNotes(notes);
+
+            appointmentRepository.save(appointment);
+
+            logger.info(
+                    "Appointment type updated successfully [appointmentId={}, status={}]",
+                    id, appointmentType
+            );
+
+            return baseResponse.successResponse(
+                    "Appointment Type updated successfully");
+
+        } catch (IllegalArgumentException e) {
+            logger.warn("Type update failed | {}", e.getMessage());
+            return baseResponse.errorResponse(
+                    HttpStatus.NOT_FOUND,
+                    e.getMessage()
+            );
+
+        } catch (Exception e) {
+            logger.error(
+                    "Unexpected error updating appointment Type [appointmentId={}]",
+                    id, e
+            );
+            return baseResponse.errorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to update appointment type"
+            );
+        }
+    }
+
 
     private AppointmentDTO convertToDTO(Appointment appointment) {
         AppointmentDTO dto = new AppointmentDTO();
@@ -791,7 +837,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         dto.setCompletedAt(appointment.getCompletedAt());
         dto.setConsultationNotes(appointment.getConsultationNotes());
 
-        // Include additional appointment fields
+        dto.setAppointmentType(appointment.getAppointmentType());
+
         dto.setCancellationReason(appointment.getCancellationReason());
         dto.setRescheduledFrom(appointment.getRescheduledFrom());
         dto.setRescheduledTo(appointment.getRescheduledTo());
@@ -1449,6 +1496,10 @@ public class AppointmentServiceImpl implements AppointmentService {
             appointment.setIsEmergency(appointmentWithSlotDTO.getIsEmergency());
             appointment.setPriority(appointmentWithSlotDTO.getPriority());
             appointment.setFollowUpRequired(appointmentWithSlotDTO.getFollowUpRequired());
+            appointment.setAppointmentType(appointmentWithSlotDTO.getAppointmentType());
+            // Determine and set appointment type if not explicitly provided
+//            String appointmentType = determineAppointmentType(appointmentWithSlotDTO, doctor, patient);
+//            appointment.setAppointmentType(appointmentType);
             
             // Set company and branch with proper priority
             // Priority 1: Use branchId from DTO if provided
@@ -1525,6 +1576,76 @@ public class AppointmentServiceImpl implements AppointmentService {
             return baseResponse.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Something went wrong while booking the appointment. Please try again later.");
         }
+    }
+
+    /**
+     * Determine the appointment type based on various factors.
+     * 
+     * @param dto The appointment DTO
+     * @param doctor The doctor entity
+     * @param patient The patient entity
+     * @return The determined appointment type
+     * @author Rahul Kumar
+     */
+    private String determineAppointmentType(AppointmentWithSlotDTO dto, Doctor doctor, Customer patient) {
+        // Priority 1: Use explicitly provided appointment type
+        if (dto.getAppointmentType() != null && !dto.getAppointmentType().trim().isEmpty()) {
+            logger.debug("Using provided appointment type: {}", dto.getAppointmentType());
+            return dto.getAppointmentType().toUpperCase();
+        }
+
+        // Priority 2: Check if it's an emergency appointment
+        if (Boolean.TRUE.equals(dto.getIsEmergency())) {
+            logger.debug("Setting appointment type to EMERGENCY");
+            return "EMERGENCY";
+        }
+
+        // Priority 3: Check if it's a follow-up appointment
+        if (Boolean.TRUE.equals(dto.getFollowUpRequired()) || 
+            (dto.getReason() != null && dto.getReason().toLowerCase().contains("follow-up"))) {
+            logger.debug("Setting appointment type to FOLLOW_UP");
+            return "FOLLOW_UP";
+        }
+
+        // Priority 4: Determine based on reason keywords
+        if (dto.getReason() != null) {
+            String reasonLower = dto.getReason().toLowerCase();
+            
+            if (reasonLower.contains("checkup") || reasonLower.contains("routine") || 
+                reasonLower.contains("general") || reasonLower.contains("regular")) {
+                logger.debug("Setting appointment type to ROUTINE_CHECKUP");
+                return "ROUTINE_CHECKUP";
+            }
+            
+            if (reasonLower.contains("consult") || reasonLower.contains("consultation") ||
+                reasonLower.contains("new symptom") || reasonLower.contains("new problem")) {
+                logger.debug("Setting appointment type to CONSULTATION");
+                return "CONSULTATION";
+            }
+            
+            if (reasonLower.contains("procedure") || reasonLower.contains("surgery") ||
+                reasonLower.contains("operation")) {
+                logger.debug("Setting appointment type to PROCEDURE");
+                return "PROCEDURE";
+            }
+            
+            if (reasonLower.contains("review") || reasonLower.contains("follow up") ||
+                reasonLower.contains("progress")) {
+                logger.debug("Setting appointment type to REVIEW");
+                return "REVIEW";
+            }
+        }
+
+        // Priority 5: Check if patient has previous appointments (returning patient)
+        long previousAppointments = appointmentRepository.countByPatientId(patient.getId());
+        if (previousAppointments == 0) {
+            logger.debug("Setting appointment type to NEW_PATIENT (first appointment)");
+            return "NEW_PATIENT";
+        }
+
+        // Default: Regular consultation
+        logger.debug("Setting default appointment type to CONSULTATION");
+        return "CONSULTATION";
     }
 
     @Override
