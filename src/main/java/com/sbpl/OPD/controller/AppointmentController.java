@@ -404,4 +404,23 @@ public class AppointmentController {
 
         return appointmentService.getNoShowAppointmentsByPatient(patientId, pageNo, pageSize);
     }
+    
+    /**
+     * Update appointment type and notes
+     * The appointment type is automatically determined based on the appointmentType and notes content
+     * Available to staff and higher roles
+     * 
+     * @param id The appointment ID
+     * @param appointmentType The new appointmentType
+     * @param notes The new notes (optional)
+     *
+     */
+    @PutMapping("/{id}/update-type")
+    public ResponseEntity<?> updateAppointmentTypeWithReasonAndNotes(
+            @PathVariable Long id,
+            @RequestParam String appointmentType,
+            @RequestParam(required = false) String notes) {
+
+        return appointmentService.updateAppointmentTypeWithReasonAndNotes(id, appointmentType, notes);
+    }
 }

@@ -42,7 +42,7 @@ public interface AppointmentService {
 
     ResponseEntity<?> deleteAppointment(Long id);
     ResponseEntity<?> updateAppointmentStatus(Long id, AppointmentStatus status);
-    
+
     // Employee self-service appointments
     ResponseEntity<?> getMyAppointments(Integer pageNo, Integer pageSize);
     ResponseEntity<?> getMyAppointmentsByStatus(AppointmentStatus status, Integer pageNo, Integer pageSize);
@@ -89,4 +89,7 @@ public interface AppointmentService {
     ResponseEntity<?> getNoShowAppointments(Integer pageNo, Integer pageSize);
     ResponseEntity<?> getNoShowAppointmentsByDoctor(Long doctorId, Integer pageNo, Integer pageSize);
     ResponseEntity<?> getNoShowAppointmentsByPatient(Long patientId, Integer pageNo, Integer pageSize);
+    
+    // Update appointment type with reason and notes
+    ResponseEntity<?> updateAppointmentTypeWithReasonAndNotes(Long id, String appointmentType, String notes);
 }

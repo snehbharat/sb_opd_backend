@@ -4,6 +4,8 @@ package com.sbpl.OPD.serviceImp;
 import com.opencsv.exceptions.CsvValidationException;
 import com.sbpl.OPD.Auth.enums.UserRole;
 import com.sbpl.OPD.Auth.model.User;
+import com.sbpl.OPD.dto.BillDTO;
+import com.sbpl.OPD.dto.BillItemDTO;
 import com.sbpl.OPD.dto.customer.request.CustomerRegistrationDto;
 import com.sbpl.OPD.dto.customer.request.CustomerUpdateDto;
 import com.sbpl.OPD.dto.customer.request.PatientCsvImportRequestDto;
@@ -12,6 +14,7 @@ import com.sbpl.OPD.dto.customer.response.CustomerResponseDto;
 import com.sbpl.OPD.dto.customer.response.CustomerWithPackageUsageDTO;
 import com.sbpl.OPD.dto.customer.response.PatientCsvImportResponseDto;
 import com.sbpl.OPD.dto.treatment.pkg.PackageUsageInfoDTO;
+import com.sbpl.OPD.enums.BillStatus;
 import com.sbpl.OPD.enums.CustomerSearchType;
 import com.sbpl.OPD.model.Branch;
 import com.sbpl.OPD.model.CompanyProfile;
@@ -24,6 +27,7 @@ import com.sbpl.OPD.repository.CustomerRepository;
 import com.sbpl.OPD.repository.DepartmentRepository;
 import com.sbpl.OPD.repository.PatientPackageUsageRepository;
 import com.sbpl.OPD.response.BaseResponse;
+import com.sbpl.OPD.service.BillService;
 import com.sbpl.OPD.service.CustomerService;
 import com.sbpl.OPD.service.CustomerUhidService;
 import com.sbpl.OPD.utils.CsvParserUtil;
@@ -42,7 +46,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -90,6 +98,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Autowired
     private PatientPackageUsageRepository patientPackageUsageRepository;
+
+    @Autowired
+    private BillService billService;
 
     /**
      * Fetch all customers with pagination.
@@ -276,6 +287,17 @@ public class CustomerServiceImpl implements CustomerService {
         dto.setTotalDueAmount(customerView.getTotalDueAmount());
         dto.setTotalBillAmount(customerView.getTotalBillAmount());
 
+        // Set last appointment details with IST timezone conversion
+        LocalDateTime lastAppointmentDate = customerView.getLastAppointmentDate();
+        if (lastAppointmentDate != null) {
+            // Convert to IST timezone
+            ZonedDateTime istDateTime = lastAppointmentDate.atZone(ZoneId.of("Asia/Kolkata"));
+            dto.setLastAppointmentDate(istDateTime.toLocalDateTime());
+        }
+        dto.setLastAppointmentNumber(customerView.getLastAppointmentNumber());
+        dto.setLastDoctorName(customerView.getLastDoctorName());
+        dto.setLastDoctorId(customerView.getLastDoctorId());
+
         List<PatientPackageUsage> activeUsages = patientPackageUsageRepository.findActiveUsagesByPatientId(customerView.getId());
         
         if (!activeUsages.isEmpty()) {
@@ -395,6 +417,7 @@ public class CustomerServiceImpl implements CustomerService {
      * Create a new customer.
      */
     @Override
+    @Transactional
     public ResponseEntity<?> createCustomer(CustomerRegistrationDto dto) {
 
         logger.info("Creating customer [phone={}, email={}]",
@@ -442,12 +465,12 @@ public class CustomerServiceImpl implements CustomerService {
             customer.setDateOfBirth(dto.getDateOfBirth());
             customer.setAge(dto.getAge()); // Age can be null now
             customer.setCompany(company);
+            customer.setIsRegistrationFee(dto.getIsRegistrationFee());
             
             // Generate and set UHID
             String uhid = customerUhidService.generateUhid(dto.getCompanyId(), dto.getBranchId());
             customer.setUhid(uhid);
             
-            // Set department if provided
             if (dto.getDepartmentId() != null) {
                 Department department = departmentRepository.findById(dto.getDepartmentId())
                     .orElseThrow(() -> new IllegalArgumentException("Department not found with ID: " + dto.getDepartmentId()));
@@ -455,8 +478,16 @@ public class CustomerServiceImpl implements CustomerService {
             }
 
             Customer savedCustomer = customerRepository.save(customer);
-            CustomerResponseDto responseDto = convertToResponseDto(savedCustomer);
+            
+            if (Boolean.TRUE.equals(dto.getIsRegistrationFee())) {
+                try {
+                    createRegistrationBill(savedCustomer, dto);
+                } catch (Exception e) {
+                    logger.error("Failed to create registration bill for patient {}", savedCustomer.getId(), e);
 
+                }
+            }
+            
             return baseResponse.successResponse(
                     "Customer created successfully"
             );
@@ -925,6 +956,73 @@ public class CustomerServiceImpl implements CustomerService {
         } catch (Exception e) {
             logger.error("Error searching for customers from CSV", e);
             return baseResponse.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "something went wrong");
+        }
+    }
+
+    /**
+     * Create a registration bill for a newly registered patient.
+     *
+     * @param patient The newly created customer
+     * @param dto The registration DTO
+     * @author Rahul Kumar
+     */
+    private void createRegistrationBill(Customer patient, CustomerRegistrationDto dto) {
+        try {
+            logger.info("Creating registration bill for patient {}", patient.getId());
+            
+            // Get the current logged-in user ID
+            Long currentUserId = DbUtill.getLoggedInUserId();
+            if (currentUserId == null) {
+                logger.error("Cannot create registration bill: No logged-in user found for patient {}", patient.getId());
+                throw new IllegalStateException("No authenticated user found to create registration bill");
+            }
+            logger.info("Creating registration bill with billing staff ID: {}", currentUserId);
+
+            BillDTO billDTO = new BillDTO();
+            billDTO.setPatientId(patient.getId());
+            billDTO.setBranchId(patient.getBranch().getId()); // Set branch ID from patient
+
+            BigDecimal registrationFee = dto.getPaidAmount() != null
+                    ? dto.getPaidAmount() 
+                    : BigDecimal.ZERO;
+            
+            billDTO.setTotalAmount(registrationFee);
+            billDTO.setPaidAmount(registrationFee);
+            billDTO.setBalanceAmount(BigDecimal.ZERO);
+            billDTO.setPaymentType(dto.getPaymentType());
+            
+            BillItemDTO billItem = new BillItemDTO();
+            billItem.setItemName("Registration Fee");
+            billItem.setItemDescription("Patient registration fee");
+            billItem.setQuantity(1);
+            billItem.setUnitPrice(registrationFee);
+            billItem.setTotalPrice(registrationFee);
+            
+            List<BillItemDTO> billItems = new ArrayList<>();
+            billItems.add(billItem);
+            billDTO.setBillItems(billItems);
+            
+            billDTO.setNotes("Registration bill for new patient");
+            
+            ResponseEntity<?> response = billService.createBill(billDTO);
+            
+            if (response.getStatusCode() == HttpStatus.OK) {
+                logger.info("Registration bill created successfully for patient {}", patient.getId());
+            } else {
+                // Extract actual error message from response body
+                String errorMessage = "Unknown error";
+                if (response.getBody() instanceof com.sbpl.OPD.response.ResponseDto) {
+                    com.sbpl.OPD.response.ResponseDto responseDto = (com.sbpl.OPD.response.ResponseDto) response.getBody();
+                    errorMessage = responseDto.getMessage();
+                }
+                logger.error("Registration bill creation failed for patient {}. Status: {}, Error: {}", 
+                    patient.getId(), response.getStatusCode(), errorMessage);
+                throw new RuntimeException("Failed to create registration bill: " + errorMessage);
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error creating registration bill for patient {}", patient.getId(), e);
+            throw e;
         }
     }
 

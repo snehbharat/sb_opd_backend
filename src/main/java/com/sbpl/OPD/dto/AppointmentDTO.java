@@ -74,5 +74,8 @@ public class AppointmentDTO {
     private Long noShowRecordedBy;
     private String noShowRecordedByName;
 
+    private String appointmentType;
+
+
 
 }
