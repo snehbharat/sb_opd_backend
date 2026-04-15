@@ -20,17 +20,7 @@ import java.util.Optional;
 public interface DoctorCoreExpertiseRepository extends JpaRepository<DoctorCoreExpertise, Long> {
 
     /**
-     * Find all active core expertise entries
-     */
-    List<DoctorCoreExpertise> findByIsActiveTrue();
-
-    /**
      * Find all core expertise with pagination
-     */
-    Page<DoctorCoreExpertise> findByIsActiveTrue(Pageable pageable);
-
-    /**
-     * Find all core expertise with pagination (including inactive)
      */
     Page<DoctorCoreExpertise> findAll(Pageable pageable);
 
@@ -50,19 +40,19 @@ public interface DoctorCoreExpertiseRepository extends JpaRepository<DoctorCoreE
     List<DoctorCoreExpertise> findByExpertiseNameContainingIgnoreCase(String name);
 
     /**
-     * Find by category
+     * Find by department name (case-insensitive)
      */
-    List<DoctorCoreExpertise> findByCategoryIgnoreCase(String category);
+    List<DoctorCoreExpertise> findByDepartmentNameIgnoreCase(String departmentName);
 
     /**
-     * Count doctors by expertise
+     * Find all distinct department names
      */
-    @Query("SELECT COUNT(d) FROM Doctor d WHERE d.coreExpertise.id = :expertiseId")
+    @Query("SELECT DISTINCT d.departmentName FROM DoctorCoreExpertise d WHERE d.departmentName IS NOT NULL")
+    List<String> findAllDistinctDepartmentNames();
+
+    /**
+     * Count doctors by expertise (checks if expertise is in the doctor's coreExpertiseList)
+     */
+    @Query("SELECT COUNT(d) FROM Doctor d JOIN d.coreExpertiseList e WHERE e.id = :expertiseId")
     Long countDoctorsByExpertiseId(@Param("expertiseId") Long expertiseId);
-
-    /**
-     * Get all expertise with doctor counts
-     */
-    @Query("SELECT e.id, e.expertiseName, COUNT(d) FROM DoctorCoreExpertise e LEFT JOIN Doctor d ON d.coreExpertise.id = e.id GROUP BY e.id, e.expertiseName")
-    List<Object[]> getExpertiseWithDoctorCounts();
 }

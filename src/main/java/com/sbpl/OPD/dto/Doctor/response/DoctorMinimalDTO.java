@@ -3,6 +3,8 @@ package com.sbpl.OPD.dto.Doctor.response;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
  * Minimal doctor data transfer object for appointment-related operations.
  * Contains essential information needed for displaying doctors in appointment context.
@@ -27,6 +29,8 @@ public class DoctorMinimalDTO {
     private Long companyId;
     private Long branchId;
     
+    private List<String> coreExpertiseNames;
+
     private Long coreExpertiseId;
     private String coreExpertiseName;
 }

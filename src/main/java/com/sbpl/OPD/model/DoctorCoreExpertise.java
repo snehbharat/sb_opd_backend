@@ -26,12 +26,7 @@ public class DoctorCoreExpertise extends BaseEntity {
     @Column(name = "expertise_name", nullable = false, unique = true, length = 100)
     private String expertiseName;
 
-    @Column(name = "description", length = 500)
-    private String description;
+    @Column(name = "department_name", length = 100)
+    private String departmentName;
 
-    @Column(name = "category", length = 100)
-    private String category;
-
-    @Column(name = "is_active")
-    private Boolean isActive = true;
 }

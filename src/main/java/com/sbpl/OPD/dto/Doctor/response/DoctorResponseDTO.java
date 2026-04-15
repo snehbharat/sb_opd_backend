@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -49,10 +50,12 @@ public class DoctorResponseDTO {
     private Long branchId;
     private String branchName;
 
-    // Core Expertise Info
+    private List<String> coreExpertiseNames;
+
     private Long coreExpertiseId;
     private String coreExpertiseName;
     private String coreExpertiseCategory;
 
     private DoctorScheduleDaysDTO scheduleDays;
+
 }

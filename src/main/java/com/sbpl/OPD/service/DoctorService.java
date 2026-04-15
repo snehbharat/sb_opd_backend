@@ -3,6 +3,8 @@ package com.sbpl.OPD.service;
 import com.sbpl.OPD.dto.Doctor.request.DoctorDTO;
 import com.sbpl.OPD.enums.DoctorSearchType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * This is a doctor creation service class .
@@ -12,9 +14,11 @@ import org.springframework.http.ResponseEntity;
 
 public interface DoctorService {
 
-    ResponseEntity<?> createDoctor(DoctorDTO doctorDTO);
+//    ResponseEntity<?> createDoctor(DoctorDTO doctorDTO);
 
-    ResponseEntity<?> updateDoctor(Long doctorId, DoctorDTO doctorDTO);
+    ResponseEntity<?> createDoctor(DoctorDTO dto, MultipartFile doctorSign);
+
+    ResponseEntity<?> updateDoctor(Long doctorId, DoctorDTO doctorDTO,MultipartFile doctorSign);
 
     ResponseEntity<?> getDoctorById(Long doctorId);
 
@@ -32,6 +36,8 @@ public interface DoctorService {
     );
 
     ResponseEntity<?> deleteDoctor(Long doctorId);
+
+    ResponseEntity<?> getDoctorSignAsBase64(Long doctorId);
 
     ResponseEntity<?> searchDoctor(DoctorSearchType type, String value);
 

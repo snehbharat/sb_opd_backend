@@ -9,6 +9,5 @@ import lombok.Setter;
 public class CreateExpertiseRequest {
         @NotBlank(message = "Expertise name is required")
         private String expertiseName;
-        private String description;
-        private String category;
+        private String departmentName;
     }

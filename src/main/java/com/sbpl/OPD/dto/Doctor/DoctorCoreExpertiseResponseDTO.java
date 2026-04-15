@@ -14,8 +14,6 @@ public class DoctorCoreExpertiseResponseDTO {
 
     private Long id;
     private String expertiseName;
-    private String description;
-    private String category;
-    private Boolean isActive;
+    private String departmentName;
     private Long doctorCount; // Number of doctors with this expertise
 }
