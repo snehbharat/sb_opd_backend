@@ -85,10 +85,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.doctorName) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.company.id = :companyId
@@ -110,10 +107,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.doctorName) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.branch.id = :branchId
@@ -135,10 +129,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.doctorEmail) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.company.id = :companyId
@@ -160,10 +151,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.doctorEmail) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.branch.id = :branchId
@@ -185,10 +173,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.phoneNumber) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.company.id = :companyId
@@ -210,10 +195,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.phoneNumber) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.branch.id = :branchId
@@ -235,10 +217,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.registrationNumber) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.company.id = :companyId
@@ -260,10 +239,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.registrationNumber) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.branch.id = :companyId
@@ -285,10 +261,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.specialization) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.company.id = :companyId
@@ -310,10 +283,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE LOWER(d.specialization) LIKE LOWER(CONCAT('%', :name, '%'))
             AND d.branch.id = :companyId
@@ -345,10 +315,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE d.company.id = :companyId
             AND (
@@ -376,10 +343,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                 d.registrationNumber as registrationNumber,
                 d.experienceYears as experienceYears,
                 d.company.id as companyId,
-                d.branch.id as branchId,
-                d.coreExpertise.id as coreExpertiseId,
-                d.coreExpertise.expertiseName as coreExpertiseName,
-                d.coreExpertise.category as coreExpertiseCategory
+                d.branch.id as branchId
             FROM Doctor d
             WHERE d.branch.id = :companyId
             AND (

@@ -8,16 +8,18 @@ import com.sbpl.OPD.utils.RbacUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * REST controller for doctor-related operations.
@@ -52,10 +54,11 @@ public class DoctorController {
 //        return doctorService.getAllDoctorsMinimal();
 //    }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createDoctor(
-            @Valid @RequestBody DoctorDTO doctorDTO) {
-        return doctorService.createDoctor(doctorDTO);
+            @RequestPart(value = "doctorSign", required = false) MultipartFile doctorSign,
+            @Valid @RequestPart("doctorDetails") DoctorDTO doctorDTO) {
+        return doctorService.createDoctor(doctorDTO,doctorSign);
     }
 
     @GetMapping("/{id}")
@@ -84,11 +87,12 @@ public class DoctorController {
 //        return doctorService.getDoctorsBySpecialization(specialization, pageNo, pageSize);
 //    }
 
-    @PutMapping("/update/{id}")
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, value = "/update/{id}")
     public ResponseEntity<?> updateDoctor(
             @PathVariable Long id,
-            @Valid @RequestBody DoctorDTO doctorDTO) {
-        return doctorService.updateDoctor(id, doctorDTO);
+            @RequestPart(required = false) MultipartFile doctorSign,
+            @Valid @RequestPart("doctorDetails") DoctorDTO doctorDTO) {
+        return doctorService.updateDoctor(id, doctorDTO,doctorSign);
     }
 
     @DeleteMapping("/delete/{id}")
@@ -114,5 +118,11 @@ public class DoctorController {
             @RequestParam String keyword) {
 
         return doctorService.searchDoctor(type, keyword);
+    }
+
+    @GetMapping("/sign/{doctorId}")
+    public ResponseEntity<?> getDoctorSignAsBase64(
+            @PathVariable @NotNull Long doctorId) {
+        return doctorService.getDoctorSignAsBase64(doctorId);
     }
 }

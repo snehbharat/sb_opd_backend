@@ -43,4 +43,19 @@ public interface DoctorCoreExpertiseService {
      * Delete a core expertise (only if no doctors are using it)
      */
     ResponseEntity<?> deleteCoreExpertise(Long expertiseId);
+
+    /**
+     * Get core expertise by department name
+     */
+    ResponseEntity<?> getExpertiseByDepartment(String departmentName);
+
+    /**
+     * Get all expertise grouped by department
+     */
+    ResponseEntity<?> getAllExpertiseGroupedByDepartment();
+
+    /**
+     * Get all distinct department names
+     */
+    ResponseEntity<?> getAllDepartments();
 }

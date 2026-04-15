@@ -15,14 +15,4 @@ public class ResponseDto {
     private Object data;
     private LocalDateTime timestamp;
 
-    // @Override
-    // public String toString() {
-    //     return "ResponseDto{" +
-    //             "response=" + response +
-    //             ", message='" + message + '\'' +
-    //             ", status=" + status +
-    //             ", data=" + data +
-    //             ", timestamp=" + timestamp +
-    //             '}';
-    // }
 }

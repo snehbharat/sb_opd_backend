@@ -53,8 +53,8 @@ public class DoctorCoreExpertiseController {
         
         return expertiseService.createCoreExpertise(
                 request.getExpertiseName(),
-                request.getDescription(),
-                request.getCategory()
+                null, // description not used in model
+                request.getDepartmentName()
         );
     }
 
@@ -73,8 +73,8 @@ public class DoctorCoreExpertiseController {
         return expertiseService.updateCoreExpertise(
                 expertiseId,
                 request.getExpertiseName(),
-                request.getDescription(),
-                request.getCategory(),
+                null, // description not used
+                request.getDepartmentName(),
                 request.getIsActive()
         );
     }
@@ -146,6 +146,37 @@ public class DoctorCoreExpertiseController {
     @DeleteMapping("/{expertiseId}")
     public ResponseEntity<?> deleteCoreExpertise(@PathVariable Long expertiseId) {
         return expertiseService.deleteCoreExpertise(expertiseId);
+    }
+
+    /**
+     * Get core expertise by department name
+     * 
+     * @param departmentName Department name to filter by
+     * @return List of expertise in the specified department
+     */
+    @GetMapping("/department/search")
+    public ResponseEntity<?> getExpertiseByDepartment(@RequestParam String departmentName) {
+        return expertiseService.getExpertiseByDepartment(departmentName);
+    }
+
+    /**
+     * Get all expertise grouped by department
+     * 
+     * @return Expertise grouped by department
+     */
+    @GetMapping("/grouped-by-department")
+    public ResponseEntity<?> getAllExpertiseGroupedByDepartment() {
+        return expertiseService.getAllExpertiseGroupedByDepartment();
+    }
+
+    /**
+     * Get all distinct department names
+     * 
+     * @return List of all departments
+     */
+    @GetMapping("/departments")
+    public ResponseEntity<?> getAllDepartments() {
+        return expertiseService.getAllDepartments();
     }
 
 }

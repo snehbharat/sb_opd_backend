@@ -1,6 +1,7 @@
 package com.sbpl.OPD.serviceImp;
 
 import com.sbpl.OPD.dto.Doctor.DoctorCoreExpertiseResponseDTO;
+import com.sbpl.OPD.dto.Doctor.DepartmentExpertiseGroupDTO;
 import com.sbpl.OPD.model.DoctorCoreExpertise;
 import com.sbpl.OPD.repository.DoctorCoreExpertiseRepository;
 import com.sbpl.OPD.response.BaseResponse;
@@ -18,7 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 /**
  * Implementation of doctor core expertise service.
@@ -51,9 +55,7 @@ public class DoctorCoreExpertiseServiceImpl implements DoctorCoreExpertiseServic
 
             DoctorCoreExpertise expertise = new DoctorCoreExpertise();
             expertise.setExpertiseName(expertiseName.trim());
-            expertise.setDescription(description);
-            expertise.setCategory(category);
-            expertise.setIsActive(true);
+            expertise.setDepartmentName(category); // Using category as departmentName if needed
             expertise.setCreatedBy(DbUtill.getLoggedInUserId());
 
             DoctorCoreExpertise saved = expertiseRepository.save(expertise);
@@ -91,16 +93,8 @@ public class DoctorCoreExpertiseServiceImpl implements DoctorCoreExpertiseServic
                 expertise.setExpertiseName(expertiseName.trim());
             }
 
-            if (description != null) {
-                expertise.setDescription(description);
-            }
-
             if (category != null) {
-                expertise.setCategory(category);
-            }
-
-            if (isActive != null) {
-                expertise.setIsActive(isActive);
+                expertise.setDepartmentName(category); // Using category as departmentName
             }
 
             expertise.setUpdatedBy(DbUtill.getLoggedInUserId());
@@ -143,21 +137,14 @@ public class DoctorCoreExpertiseServiceImpl implements DoctorCoreExpertiseServic
     public ResponseEntity<?> getAllCoreExpertise(Integer pageNo, Integer pageSize, Boolean activeOnly) {
         PageRequest pageRequest = DbUtill.buildPageRequestWithDefaultSort(pageNo, pageSize);
 
-        Page<DoctorCoreExpertise> page;
-        
-        if (Boolean.TRUE.equals(activeOnly)) {
-            page = expertiseRepository.findByIsActiveTrue(pageRequest);
-        } else {
-            page = expertiseRepository.findAll(pageRequest);
-        }
+        // Since isActive field is removed, we fetch all expertise regardless of activeOnly parameter
+        Page<DoctorCoreExpertise> page = expertiseRepository.findAll(pageRequest);
 
         List<DoctorCoreExpertiseResponseDTO> responseDTOs = page.getContent().stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
 
-        String message = Boolean.TRUE.equals(activeOnly) 
-                ? "Active core expertise fetched successfully" 
-                : "All core expertise fetched successfully";
+        String message = "All core expertise fetched successfully";
 
         return baseResponse.successResponse(
                 message,
@@ -185,19 +172,19 @@ public class DoctorCoreExpertiseServiceImpl implements DoctorCoreExpertiseServic
     @Transactional
     @Override
     public ResponseEntity<?> activateOrDeactivateExpertise(Long expertiseId, Boolean active) {
-        logger.info("Activating/Deactivating doctor core expertise [id={}, active={}]", expertiseId, active);
+        logger.info("Activate/Deactivate request for doctor core expertise [id={}, active={}] - Note: isActive field removed", expertiseId, active);
 
         try {
             DoctorCoreExpertise expertise = expertiseRepository.findById(expertiseId)
                     .orElseThrow(() -> new IllegalArgumentException("Core expertise not found with ID: " + expertiseId));
 
-            expertise.setIsActive(active);
+            // Note: Since isActive field is removed from DoctorCoreExpertise model,
+            // this method now just logs the request without actually changing any field.
+            // Consider removing this endpoint if not needed, or add alternative logic.
             expertise.setUpdatedBy(DbUtill.getLoggedInUserId());
             expertiseRepository.save(expertise);
 
-            String message = Boolean.TRUE.equals(active) 
-                    ? "Core expertise activated successfully" 
-                    : "Core expertise deactivated successfully";
+            String message = "Expertise status update request received. Note: isActive field is not available in current model.";
 
             return baseResponse.successResponse(message);
 
@@ -240,14 +227,144 @@ public class DoctorCoreExpertiseServiceImpl implements DoctorCoreExpertiseServic
         DoctorCoreExpertiseResponseDTO dto = new DoctorCoreExpertiseResponseDTO();
         dto.setId(expertise.getId());
         dto.setExpertiseName(expertise.getExpertiseName());
-        dto.setDescription(expertise.getDescription());
-        dto.setCategory(expertise.getCategory());
-        dto.setIsActive(expertise.getIsActive());
+        dto.setDepartmentName(expertise.getDepartmentName());
         
         // Get doctor count
         Long count = expertiseRepository.countDoctorsByExpertiseId(expertise.getId());
         dto.setDoctorCount(count);
         
         return dto;
+    }
+
+    @Override
+    public ResponseEntity<?> getExpertiseByDepartment(String departmentName) {
+        logger.info("Fetching core expertise by department [department={}]", departmentName);
+
+        try {
+            List<DoctorCoreExpertise> expertiseList = expertiseRepository.findByDepartmentNameIgnoreCase(departmentName);
+            
+            List<DoctorCoreExpertiseResponseDTO> responseDTOs = expertiseList.stream()
+                    .map(this::convertToResponseDTO)
+                    .collect(Collectors.toList());
+
+            String message = responseDTOs.isEmpty()
+                    ? "No core expertise found for department '" + departmentName + "'"
+                    : "Core expertise fetched successfully for department '" + departmentName + "'";
+
+            return baseResponse.successResponse(message, responseDTOs);
+
+        } catch (Exception e) {
+            logger.error("Error fetching core expertise by department", e);
+            return baseResponse.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to fetch expertise by department");
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getAllExpertiseGroupedByDepartment() {
+        logger.info("Fetching all core expertise grouped by department");
+
+        try {
+            // Get all expertise
+            List<DoctorCoreExpertise> allExpertise = expertiseRepository.findAll();
+
+            // Group by department
+            Map<String, List<DoctorCoreExpertise>> groupedByDepartment = allExpertise.stream()
+                    .filter(exp -> exp.getDepartmentName() != null && !exp.getDepartmentName().trim().isEmpty())
+                    .collect(Collectors.groupingBy(
+                            DoctorCoreExpertise::getDepartmentName,
+                            LinkedHashMap::new,
+                            Collectors.toList()
+                    ));
+
+            // Convert to response DTO
+            List<DepartmentExpertiseGroupDTO> responseList = new ArrayList<>();
+            long totalDoctorCountAll = 0;
+
+            for (Map.Entry<String, List<DoctorCoreExpertise>> entry : groupedByDepartment.entrySet()) {
+                String department = entry.getKey();
+                List<DoctorCoreExpertise> expertiseInDept = entry.getValue();
+
+                List<DoctorCoreExpertiseResponseDTO> expertiseDTOs = expertiseInDept.stream()
+                        .map(this::convertToResponseDTO)
+                        .collect(Collectors.toList());
+
+                long totalDoctorCount = expertiseDTOs.stream()
+                        .mapToLong(dto -> dto.getDoctorCount() != null ? dto.getDoctorCount() : 0L)
+                        .sum();
+
+                totalDoctorCountAll += totalDoctorCount;
+
+                DepartmentExpertiseGroupDTO groupDTO = new DepartmentExpertiseGroupDTO();
+                groupDTO.setDepartmentName(department);
+                groupDTO.setExpertiseCount((long) expertiseDTOs.size());
+                groupDTO.setTotalDoctorCount(totalDoctorCount);
+                groupDTO.setExpertiseList(expertiseDTOs);
+
+                responseList.add(groupDTO);
+            }
+
+            // Add expertise without department to a separate group
+            List<DoctorCoreExpertise> ungrouped = allExpertise.stream()
+                    .filter(exp -> exp.getDepartmentName() == null || exp.getDepartmentName().trim().isEmpty())
+                    .collect(Collectors.toList());
+
+            if (!ungrouped.isEmpty()) {
+                List<DoctorCoreExpertiseResponseDTO> ungroupedDTOs = ungrouped.stream()
+                        .map(this::convertToResponseDTO)
+                        .collect(Collectors.toList());
+
+                DepartmentExpertiseGroupDTO ungroupedDTO = new DepartmentExpertiseGroupDTO();
+                ungroupedDTO.setDepartmentName("Other/Unclassified");
+                ungroupedDTO.setExpertiseCount((long) ungroupedDTOs.size());
+                ungroupedDTO.setTotalDoctorCount(ungroupedDTOs.stream()
+                        .mapToLong(dto -> dto.getDoctorCount() != null ? dto.getDoctorCount() : 0L)
+                        .sum());
+                ungroupedDTO.setExpertiseList(ungroupedDTOs);
+
+                responseList.add(ungroupedDTO);
+            }
+
+            logger.info("Successfully grouped {} expertise entries into {} departments",
+                    allExpertise.size(), responseList.size());
+
+            return baseResponse.successResponse(
+                    "Core expertise grouped by department fetched successfully",
+                    responseList
+            );
+
+        } catch (Exception e) {
+            logger.error("Error grouping expertise by department", e);
+            return baseResponse.errorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to group expertise by department"
+            );
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getAllDepartments() {
+        logger.info("Fetching all distinct department names");
+
+        try {
+            List<String> departments = expertiseRepository.findAllDistinctDepartmentNames();
+            
+            // Filter out nulls and empty strings
+            List<String> validDepartments = departments.stream()
+                    .filter(dept -> dept != null && !dept.trim().isEmpty())
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            return baseResponse.successResponse(
+                    "Departments fetched successfully",
+                    validDepartments
+            );
+
+        } catch (Exception e) {
+            logger.error("Error fetching departments", e);
+            return baseResponse.errorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to fetch departments"
+            );
+        }
     }
 }

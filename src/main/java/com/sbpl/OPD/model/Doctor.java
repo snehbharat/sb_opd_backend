@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -14,6 +16,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
+
 /**
  * Represents a doctor in the Hospital Management System.
  *
@@ -84,6 +88,9 @@ public class Doctor extends BaseEntity {
     private Double consultationFee;
     private Boolean onlineConsultationAvailable = false;
 
+    @Column(name = "doctor_sign_url")
+    private String doctorSignUrl;
+
 
     @Column(name = "is_active")
     private Boolean isActive = true;
@@ -98,7 +105,12 @@ public class Doctor extends BaseEntity {
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "core_expertise_id")
-    private DoctorCoreExpertise coreExpertise;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "doctor_expertise_mapping",
+        schema = "sb_opd",
+        joinColumns = @JoinColumn(name = "doctor_id"),
+        inverseJoinColumns = @JoinColumn(name = "expertise_id")
+    )
+    private List<DoctorCoreExpertise> coreExpertiseList;
 }

@@ -32,12 +32,6 @@ public interface DoctorResponseDTOForSearch {
 
     Long getBranchId();
     
-    Long getCoreExpertiseId();
-    
-    String getCoreExpertiseName();
-    
-    String getCoreExpertiseCategory();
-    
     Integer getExperienceYears();
 
     DoctorScheduleDaysDTO getScheduleDays();

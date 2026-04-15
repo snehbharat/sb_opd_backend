@@ -11,12 +11,11 @@ import com.sbpl.OPD.dto.Doctor.response.DoctorResponseDTO;
 import com.sbpl.OPD.dto.Doctor.response.DoctorScheduleDaysDTO;
 import com.sbpl.OPD.dto.UserDTO;
 import com.sbpl.OPD.enums.DoctorSearchType;
-import com.sbpl.OPD.enums.ScheduleStatus;
+import com.sbpl.OPD.exception.BusinessException;
 import com.sbpl.OPD.model.Branch;
 import com.sbpl.OPD.model.CompanyProfile;
 import com.sbpl.OPD.model.Doctor;
 import com.sbpl.OPD.model.DoctorCoreExpertise;
-import com.sbpl.OPD.model.Schedule;
 import com.sbpl.OPD.repository.BranchRepository;
 import com.sbpl.OPD.repository.CompanyProfileRepository;
 import com.sbpl.OPD.repository.DepartmentRepository;
@@ -27,6 +26,7 @@ import com.sbpl.OPD.response.BaseResponse;
 import com.sbpl.OPD.service.DoctorService;
 import com.sbpl.OPD.utils.DbUtill;
 import com.sbpl.OPD.utils.RbacUtil;
+import com.sbpl.OPD.utils.S3BucketStorageUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -40,9 +40,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -71,12 +74,14 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorCoreExpertiseRepository doctorCoreExpertiseRepository;
     private final DepartmentRepository departmentRepository;
     private final ScheduleRepository scheduleRepository;
+    private final S3BucketStorageUtility s3BucketStorageUtility;
+
 
     public DoctorServiceImpl(
             DoctorRepository doctorRepository,
             UserRepository userRepository,
             BaseResponse baseResponse, UserServiceImpl userService, CompanyProfileRepository companyRepository, BranchRepository branchRepository, RbacUtil rbacUtil, DoctorCoreExpertiseRepository doctorCoreExpertiseRepository,
-            DepartmentRepository departmentRepository, ScheduleRepository scheduleRepository
+            DepartmentRepository departmentRepository, ScheduleRepository scheduleRepository, S3BucketStorageUtility s3BucketStorageUtility
     ) {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
@@ -88,11 +93,12 @@ public class DoctorServiceImpl implements DoctorService {
         this.doctorCoreExpertiseRepository = doctorCoreExpertiseRepository;
         this.departmentRepository = departmentRepository;
         this.scheduleRepository = scheduleRepository;
+        this.s3BucketStorageUtility = s3BucketStorageUtility;
     }
 
     @Transactional
     @Override
-    public ResponseEntity<?> createDoctor(DoctorDTO dto) {
+    public ResponseEntity<?> createDoctor(DoctorDTO dto, MultipartFile doctorSign) {
 
         logger.info("Doctor creation request received [email={}]", dto.getDoctorEmail());
 
@@ -139,7 +145,8 @@ public class DoctorServiceImpl implements DoctorService {
                     savedUser,
                     currentUserId,
                     company,
-                    branch
+                    branch,
+                    doctorSign
             );
 
             logger.info("Doctor created successfully [clinicId={},branchId = {}]",dto.getCompanyId(),dto.getBranchId());
@@ -171,7 +178,7 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Transactional
     @Override
-    public ResponseEntity<?> updateDoctor(Long doctorId, DoctorDTO dto) {
+    public ResponseEntity<?> updateDoctor(Long doctorId, DoctorDTO dto,MultipartFile doctorSign) {
 
         logger.info("Doctor update request received [doctorId={}]", doctorId);
 
@@ -287,14 +294,24 @@ public class DoctorServiceImpl implements DoctorService {
                 }
             }
 
-            // Update core expertise if provided
-            if (dto.getCoreExpertiseId() != null) {
+            // Update core expertise if provided (new approach with multiple names)
+            if (dto.getCoreExpertiseNames() != null && !dto.getCoreExpertiseNames().isEmpty()) {
+                List<DoctorCoreExpertise> expertiseList = getOrCreateCoreExpertise(dto.getCoreExpertiseNames());
+                doctor.setCoreExpertiseList(expertiseList);
+            } else if (dto.getCoreExpertiseId() != null) {
+                // Backward compatibility: single expertise ID
                 DoctorCoreExpertise coreExpertise = doctorCoreExpertiseRepository.findById(dto.getCoreExpertiseId())
                         .orElseThrow(() -> new IllegalArgumentException("Invalid core expertise ID"));
-                doctor.setCoreExpertise(coreExpertise);
-            } else if (doctor.getCoreExpertise() != null) {
-                // Allow removing core expertise
-                doctor.setCoreExpertise(null);
+                doctor.setCoreExpertiseList(Collections.singletonList(coreExpertise));
+            } else if (dto.getCoreExpertiseNames() != null && dto.getCoreExpertiseNames().isEmpty()) {
+                // Allow removing all expertise
+                doctor.setCoreExpertiseList(null);
+            }
+
+            // Update doctor sign if provided
+            if (doctorSign != null && !doctorSign.isEmpty()) {
+                String signUrl = uploadDoctorSignPhotoToS3(doctorSign, dto.getDoctorName() != null ? dto.getDoctorName() : doctor.getDoctorName());
+                doctor.setDoctorSignUrl(signUrl);
             }
 
             doctorRepository.save(doctor);
@@ -520,6 +537,52 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
+    public ResponseEntity<?> getDoctorSignAsBase64(Long doctorId) {
+        logger.info("Fetching doctor sign as Base64 [doctorId={}]", doctorId);
+
+        try {
+            Doctor doctor = doctorRepository.findById(doctorId)
+                    .orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
+
+            String doctorSignUrl = doctor.getDoctorSignUrl();
+            
+            if (doctorSignUrl == null || doctorSignUrl.trim().isEmpty()) {
+                logger.warn("No doctor sign found for doctorId={}", doctorId);
+                return baseResponse.errorResponse(HttpStatus.NOT_FOUND, "Doctor sign not found");
+            }
+
+            // Extract the file key from the S3 URL
+            // URL format: https://bucket-name.s3.region.amazonaws.com/KEY
+            String fileKey = extractFileKeyFromS3Url(doctorSignUrl);
+            
+            if (fileKey == null) {
+                logger.error("Invalid S3 URL format for doctorId={}: {}", doctorId, doctorSignUrl);
+                return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "Invalid doctor sign URL");
+            }
+
+            // Get base64 from S3
+            String base64Sign = s3BucketStorageUtility.getFileAsBase64(fileKey);
+            
+            if (base64Sign == null) {
+                logger.error("Failed to retrieve doctor sign from S3 for doctorId={}", doctorId);
+                return baseResponse.errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve doctor sign");
+            }
+
+            logger.info("Doctor sign retrieved successfully as Base64 [doctorId={}]", doctorId);
+            return baseResponse.successResponse("Doctor sign retrieved successfully", base64Sign);
+
+        } catch (IllegalArgumentException e) {
+            return baseResponse.errorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error fetching doctor sign as Base64 for doctorId={}", doctorId, e);
+            return baseResponse.errorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to retrieve doctor sign"
+            );
+        }
+    }
+
+    @Override
     public ResponseEntity<?> searchDoctor(DoctorSearchType type, String value) {
 
         Long branchId = null;
@@ -575,7 +638,8 @@ public class DoctorServiceImpl implements DoctorService {
             User savedUser,
             Long currentUserId,
             CompanyProfile company,
-            Branch branch
+            Branch branch,
+            MultipartFile doctorSign
     ) {
 
         Doctor doctor = new Doctor();
@@ -602,6 +666,12 @@ public class DoctorServiceImpl implements DoctorService {
         doctor.setConsultationRoom(dto.getConsultationRoom());
         doctor.setShiftTiming(dto.getShiftTiming());
 
+        String photoUrl = null;
+        if ( doctorSign!= null && !doctorSign.isEmpty()) {
+            photoUrl = uploadDoctorSignPhotoToS3(doctorSign, dto.getDoctorName());
+        }
+        doctor.setDoctorSignUrl(photoUrl);
+
         doctor.setConsultationFee(dto.getConsultationFee());
         doctor.setOnlineConsultationAvailable(
                 Boolean.TRUE.equals(dto.getOnlineConsultationAvailable())
@@ -613,11 +683,14 @@ public class DoctorServiceImpl implements DoctorService {
 
         doctor.setIsActive(true);
 
-        // Set core expertise if provided
-        if (dto.getCoreExpertiseId() != null) {
+        if (dto.getCoreExpertiseNames() != null && !dto.getCoreExpertiseNames().isEmpty()) {
+            List<DoctorCoreExpertise> expertiseList = getOrCreateCoreExpertise(dto.getCoreExpertiseNames());
+            doctor.setCoreExpertiseList(expertiseList);
+        } else if (dto.getCoreExpertiseId() != null) {
+            // Backward compatibility: single expertise ID
             DoctorCoreExpertise coreExpertise = doctorCoreExpertiseRepository.findById(dto.getCoreExpertiseId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid core expertise ID"));
-            doctor.setCoreExpertise(coreExpertise);
+            doctor.setCoreExpertiseList(Collections.singletonList(coreExpertise));
         }
 
         doctor.setCompany(company);
@@ -676,10 +749,17 @@ public class DoctorServiceImpl implements DoctorService {
             dto.setBranchName(doctor.getBranch().getBranchName());
         }
 
-        if (doctor.getCoreExpertise() != null) {
-            dto.setCoreExpertiseId(doctor.getCoreExpertise().getId());
-            dto.setCoreExpertiseName(doctor.getCoreExpertise().getExpertiseName());
-            dto.setCoreExpertiseCategory(doctor.getCoreExpertise().getCategory());
+        if (doctor.getCoreExpertiseList() != null && !doctor.getCoreExpertiseList().isEmpty()) {
+            List<String> expertiseNames = doctor.getCoreExpertiseList().stream()
+                    .map(DoctorCoreExpertise::getExpertiseName)
+                    .collect(java.util.stream.Collectors.toList());
+            dto.setCoreExpertiseNames(expertiseNames);
+
+            // Set first expertise as primary (for backward compatibility)
+            DoctorCoreExpertise firstExpertise = doctor.getCoreExpertiseList().get(0);
+            dto.setCoreExpertiseId(firstExpertise.getId());
+            dto.setCoreExpertiseName(firstExpertise.getExpertiseName());
+            dto.setCoreExpertiseCategory(firstExpertise.getDepartmentName());
         }
 
         populateScheduleDays(doctor, dto);
@@ -708,9 +788,17 @@ public class DoctorServiceImpl implements DoctorService {
         if (doctor.getBranch() != null)
             dto.setBranchId(doctor.getBranch().getId());
 
-        if (doctor.getCoreExpertise() != null) {
-            dto.setCoreExpertiseId(doctor.getCoreExpertise().getId());
-            dto.setCoreExpertiseName(doctor.getCoreExpertise().getExpertiseName());
+        if (doctor.getCoreExpertiseList() != null && !doctor.getCoreExpertiseList().isEmpty()) {
+
+            List<String> expertiseNames = doctor.getCoreExpertiseList().stream()
+                    .map(DoctorCoreExpertise::getExpertiseName)
+                    .collect(java.util.stream.Collectors.toList());
+            dto.setCoreExpertiseNames(expertiseNames);
+
+            // Set first expertise as primary (for backward compatibility)
+            DoctorCoreExpertise firstExpertise = doctor.getCoreExpertiseList().get(0);
+            dto.setCoreExpertiseId(firstExpertise.getId());
+            dto.setCoreExpertiseName(firstExpertise.getExpertiseName());
         }
 
         return dto;
@@ -876,5 +964,101 @@ public class DoctorServiceImpl implements DoctorService {
             ));
         }
     }
+
+
+    private String uploadDoctorSignPhotoToS3(MultipartFile photoFile, String uhid) {
+        try {
+            logger.info("Uploading doctor signature to S3 for doctor name: {}", uhid);
+
+            byte[] fileContent = photoFile.getBytes();
+            String contentType = photoFile.getContentType();
+            String originalFileName = photoFile.getOriginalFilename();
+
+            // Use a simple naming convention for patient photos
+            String extension = "";
+            if (originalFileName != null && originalFileName.contains(".")) {
+                extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            }
+
+            String date = java.time.LocalDate.now()
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+            String uniqueFileName = "DOC/" +
+                    uhid + "_" +
+                    date + "_" +
+                    java.util.UUID.randomUUID() +
+                    extension;
+
+            String photoUrl = s3BucketStorageUtility.uploadFile(uniqueFileName, fileContent, contentType);
+
+            if (photoUrl == null) {
+                logger.error("Failed to upload patient photo to S3 for UHID: {}", uhid);
+                throw new BusinessException("Failed to upload patient photo to cloud storage", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            logger.info("Patient photo uploaded successfully to S3 for UHID: {}", uhid);
+            return photoUrl;
+
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error uploading patient photo to S3 for UHID: {}", uhid, e);
+            throw new BusinessException("Error uploading patient photo: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get or create multiple core expertise entries
+     * @param expertiseNames List of expertise names
+     * @return List of DoctorCoreExpertise entities
+     */
+    private List<DoctorCoreExpertise> getOrCreateCoreExpertise(List<String> expertiseNames) {
+        if (expertiseNames == null || expertiseNames.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return expertiseNames.stream()
+                .map(name -> {
+                    String trimmedName = name.trim();
+                    if (trimmedName.isEmpty()) {
+                        return null;
+                    }
+                    
+                    return doctorCoreExpertiseRepository
+                            .findByExpertiseNameIgnoreCase(trimmedName)
+                            .orElseGet(() -> {
+                                DoctorCoreExpertise newExpertise = new DoctorCoreExpertise();
+                                newExpertise.setExpertiseName(trimmedName);
+                                return doctorCoreExpertiseRepository.save(newExpertise);
+                            });
+                })
+                .filter(exp -> exp != null)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Extract the file key from an S3 URL
+     * @param s3Url S3 URL in format: https://bucket-name.s3.region.amazonaws.com/KEY
+     * @return File key or null if invalid URL
+     */
+    private String extractFileKeyFromS3Url(String s3Url) {
+        if (s3Url == null || s3Url.trim().isEmpty()) {
+            return null;
+        }
+        
+        try {
+            // Parse URL to extract the key
+            // Format: https://bucket.s3.region.amazonaws.com/key
+            String[] parts = s3Url.split("/", 4);
+            if (parts.length < 4) {
+                return null;
+            }
+            return parts[3]; // Return the key part
+        } catch (Exception e) {
+            logger.error("Error extracting file key from S3 URL: {}", s3Url, e);
+            return null;
+        }
+    }
+
 
 }

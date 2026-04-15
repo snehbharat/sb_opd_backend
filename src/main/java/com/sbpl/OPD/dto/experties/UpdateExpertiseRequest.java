@@ -7,7 +7,6 @@ import lombok.Setter;
 @Getter
 public class UpdateExpertiseRequest {
         private String expertiseName;
-        private String description;
-        private String category;
+        private String departmentName;
         private Boolean isActive;
     }
