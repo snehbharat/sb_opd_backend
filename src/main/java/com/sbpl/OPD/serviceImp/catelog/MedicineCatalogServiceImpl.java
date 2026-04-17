@@ -3,8 +3,8 @@ package com.sbpl.OPD.serviceImp.catelog;
 import com.sbpl.OPD.dto.catelog.request.MedicineCatalogRequestDTO;
 import com.sbpl.OPD.dto.catelog.request.MedicineCatalogUpdateDTO;
 import com.sbpl.OPD.dto.catelog.response.MedicineCatalogResponseDTO;
-import com.sbpl.OPD.model.catelog.MedicineCatalog;
-import com.sbpl.OPD.repository.catelog.MedicineCatalogRepo;
+import com.sbpl.OPD.model.prescription.MedicineCatalog;
+import com.sbpl.OPD.repository.prescription.MedicineCatalogRepo;
 import com.sbpl.OPD.response.BaseResponse;
 import com.sbpl.OPD.response.ResponseDto;
 import com.sbpl.OPD.service.catelog.MedicineCatalogService;
@@ -18,7 +18,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 /**

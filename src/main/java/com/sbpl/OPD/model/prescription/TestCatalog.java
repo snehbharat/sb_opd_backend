@@ -31,7 +31,7 @@ public class TestCatalog extends BaseEntity {
   @Column(name = "is_active", nullable = false)
   private boolean isActive = true;
 
-  @Column(name = "type_id", nullable = false)
+  @Column(name = "type_id")
   private Long typeId;
 }
 
