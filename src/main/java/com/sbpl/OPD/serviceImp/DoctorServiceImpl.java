@@ -756,10 +756,7 @@ public class DoctorServiceImpl implements DoctorService {
             dto.setCoreExpertiseNames(expertiseNames);
 
             // Set first expertise as primary (for backward compatibility)
-            DoctorCoreExpertise firstExpertise = doctor.getCoreExpertiseList().get(0);
-            dto.setCoreExpertiseId(firstExpertise.getId());
-            dto.setCoreExpertiseName(firstExpertise.getExpertiseName());
-            dto.setCoreExpertiseCategory(firstExpertise.getDepartmentName());
+            doctor.getCoreExpertiseList().get(0);
         }
 
         populateScheduleDays(doctor, dto);

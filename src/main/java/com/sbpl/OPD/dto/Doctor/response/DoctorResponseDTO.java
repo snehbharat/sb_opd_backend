@@ -52,10 +52,6 @@ public class DoctorResponseDTO {
 
     private List<String> coreExpertiseNames;
 
-    private Long coreExpertiseId;
-    private String coreExpertiseName;
-    private String coreExpertiseCategory;
-
     private DoctorScheduleDaysDTO scheduleDays;
 
 }

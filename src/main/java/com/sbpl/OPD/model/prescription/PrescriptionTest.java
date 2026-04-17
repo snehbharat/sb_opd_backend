@@ -1,6 +1,7 @@
 package com.sbpl.OPD.model.prescription;
 
 import com.sbpl.OPD.Entity.BaseEntity;
+import com.sbpl.OPD.model.catelog.TestCatalog;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

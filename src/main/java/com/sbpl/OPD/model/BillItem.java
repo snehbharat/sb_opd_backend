@@ -4,7 +4,9 @@ import com.sbpl.OPD.Entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
@@ -24,10 +26,8 @@ import java.math.BigDecimal;
  */
 
 @Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-
+@Getter
+@Setter
 @Table(name = "bill_items", schema = "sb_opd", indexes = {
         @Index(name = "idx_bill_item_bill_id", columnList = "bill_id"),
         @Index(name = "idx_bill_item_bill_name", columnList = "bill_id, item_name"),
