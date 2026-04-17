@@ -39,13 +39,6 @@ public interface TestCatalogRepo extends JpaRepository<TestCatalog, Long> {
       Pageable pageable
   );
 
-  boolean existsByNameIgnoreCaseAndFormIgnoreCaseAndStrengthIgnoreCase(
-      String name,
-      String form,
-      String strength
-  );
-
-
   boolean existsByName(String name);
 
   java.util.Optional<TestCatalog> findByName(String name);
