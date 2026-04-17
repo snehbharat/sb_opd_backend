@@ -213,10 +213,9 @@ public class DbUtill {  // Renamed from DbUtill to DbUtill to match filename
     }
 
     public static Map<String, Object> buildPaginatedResponse(Object page, java.util.List<?> content) {
-        Map<String, Object> response = new HashMap<>();
-        if (page instanceof Page) {
-            Page<?> p = (Page<?>) page;
-            response.put("content", content);
+        Map<String, Object> response = new HashMap<>(8, 1);
+        if (page instanceof Page<?> p) {
+          response.put("content", content);
             response.put("pageNo", p.getNumber());
             response.put("pageSize", p.getSize());
             response.put("totalElements", p.getTotalElements());

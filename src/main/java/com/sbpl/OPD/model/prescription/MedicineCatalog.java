@@ -19,7 +19,15 @@ import lombok.Setter;
     schema = "sb_opd",
     indexes = {
         @Index(name = "idx_medicine_active", columnList = "is_active"),
-        @Index(name = "idx_medicine_name", columnList = "name")
+        @Index(name = "idx_medicine_name", columnList = "name"),
+        @Index(
+            name = "idx_medicine_active_created_name",
+            columnList = "is_active, created_at DESC, name ASC"
+        ),
+        @Index(
+            name = "idx_medicine_name_form_strength",
+            columnList = "name, form, strength"
+        )
     }
 )
 @Getter

@@ -9,29 +9,26 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * This Is a Test Catalog Table.
+ * This Is a Test Type Database.
  *
  * @author Kousik Manik
  */
 @Entity
 @Table(
-    name = "test_catalog",
+    name = "test_type",
     schema = "sb_opd",
     indexes = {
-        @Index(name = "idx_test_active", columnList = "is_active"),
-        @Index(name = "idx_test_name", columnList = "name")
+        @Index(name = "idx_test_type_active", columnList = "is_active"),
+        @Index(name = "idx_test_type_name", columnList = "name")
     }
 )
 @Getter
 @Setter
-public class TestCatalog extends BaseEntity {
+public class TestType extends BaseEntity {
 
   private String name;
-  private String category;
+  private String description;
   @Column(name = "is_active", nullable = false)
   private boolean isActive = true;
 
-  @Column(name = "type_id", nullable = false)
-  private Long typeId;
 }
-
