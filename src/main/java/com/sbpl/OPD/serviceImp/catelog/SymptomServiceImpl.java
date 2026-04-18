@@ -7,6 +7,7 @@ import com.sbpl.OPD.model.catelog.Symptom;
 import com.sbpl.OPD.repository.catelog.SymptomRepo;
 import com.sbpl.OPD.response.BaseResponse;
 import com.sbpl.OPD.service.catelog.SymptomService;
+import com.sbpl.OPD.utils.DbUtill;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -187,7 +188,8 @@ public class SymptomServiceImpl implements SymptomService {
             logger.info("Successfully fetched {} symptoms out of total {}",
                     responsePage.size(), symptomPage.getTotalElements());
 
-            return baseResponse.successResponse("Symptoms fetched successfully", responsePage);
+            return baseResponse.successResponse("Symptoms fetched successfully",
+                    DbUtill.buildPaginatedResponse(symptomPage,responsePage));
 
         } catch (Exception e) {
             logger.error("Error occurred while fetching all symptoms: {}", e.getMessage(), e);
@@ -235,7 +237,8 @@ public class SymptomServiceImpl implements SymptomService {
             logger.info("Successfully found {} symptoms matching '{}'",
                     responsePage.size(), search);
 
-            return baseResponse.successResponse("Symptoms search completed successfully", responsePage);
+            return baseResponse.successResponse("Symptoms search completed successfully",
+                    DbUtill.buildPaginatedResponse(symptomPage,responsePage));
 
         } catch (Exception e) {
             logger.error("Error occurred while searching symptoms [search={}]: {}",
