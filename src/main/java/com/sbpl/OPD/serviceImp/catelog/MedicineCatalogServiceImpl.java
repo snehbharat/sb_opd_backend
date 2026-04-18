@@ -195,7 +195,8 @@ public class MedicineCatalogServiceImpl implements MedicineCatalogService {
 
             logger.info("Successfully retrieved {} active medicines", medicinesPage.getTotalElements());
 
-            return baseResponse.successResponse("Active medicines retrieved successfully", responsePage);
+            return baseResponse.successResponse("Active medicines retrieved successfully",
+                    DbUtill.buildPaginatedResponse(medicinesPage,responsePage));
 
         } catch (Exception e) {
             logger.error("Error occurred while fetching all active medicines: {}", e.getMessage(), e);
@@ -230,7 +231,8 @@ public class MedicineCatalogServiceImpl implements MedicineCatalogService {
             logger.info("Successfully found {} medicines matching search term: '{}'",
                     medicinesPage.getTotalElements(), search);
 
-            return baseResponse.successResponse("Medicine search completed successfully", responsePage);
+            return baseResponse.successResponse("Medicine search completed successfully",
+                    DbUtill.buildPaginatedResponse(medicinesPage,responsePage));
 
         } catch (Exception e) {
             logger.error("Error occurred while searching medicines with term '{}': {}",

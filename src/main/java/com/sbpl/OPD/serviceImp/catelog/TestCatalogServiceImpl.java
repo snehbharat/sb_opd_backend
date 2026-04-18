@@ -310,7 +310,7 @@ public class TestCatalogServiceImpl implements TestCatalogService {
             logger.info("Successfully found {} tests in category '{}'",
                     responsePage.size(), category);
 
-            return baseResponse.successResponse("Tests filtered by category successfully", responsePage);
+            return baseResponse.successResponse("Tests filtered by category successfully", DbUtill.buildPaginatedResponse(testPage,responsePage));
 
         } catch (Exception e) {
             logger.error("Error occurred while fetching tests by category [category={}]: {}",
@@ -351,7 +351,7 @@ public class TestCatalogServiceImpl implements TestCatalogService {
 
             logger.info("Successfully found {} radiology tests from all Radiology-related categories", responsePage.size());
 
-            return baseResponse.successResponse("Radiology tests retrieved successfully", responsePage);
+            return baseResponse.successResponse("Radiology tests retrieved successfully", DbUtill.buildPaginatedResponse(testPage,responsePage));
 
         } catch (Exception e) {
             logger.error("Error occurred while fetching radiology tests: {}", e.getMessage(), e);
@@ -394,7 +394,7 @@ public class TestCatalogServiceImpl implements TestCatalogService {
             logger.info("Successfully found {} radiology tests matching '{}'",
                     responsePage.size(), search);
 
-            return baseResponse.successResponse("Radiology tests search completed successfully", responsePage);
+            return baseResponse.successResponse("Radiology tests search completed successfully", DbUtill.buildPaginatedResponse(testPage,responsePage));
 
         } catch (Exception e) {
             logger.error("Error occurred while searching radiology tests [search={}]: {}",
