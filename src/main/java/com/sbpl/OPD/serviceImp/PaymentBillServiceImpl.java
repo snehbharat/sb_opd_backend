@@ -272,7 +272,7 @@ public class PaymentBillServiceImpl implements PaymentBillService {
 
       Pageable pageable = DbUtill.buildPageRequestWithoutSort(0, 20);
 
-      Page<Bill> billPage = billRepository.findBillsByPatientIdNative(patientId, pageable);
+      Page<Bill> billPage = billRepository.findByPatientIdOrderByCreatedAtMsDesc(patientId, pageable);
 
       if (billPage.isEmpty()) {
         logger.info("No bills found for patientId={}", patientId);

@@ -881,12 +881,8 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
             @Param("endMillis") Long endMillis
     );
 
-  @Query(
-      value = "SELECT * FROM aestheticq.bills " +
-          "WHERE patient_id = :patientId " +
-          "ORDER BY created_at_ms DESC",
-      countQuery = "SELECT COUNT(*) FROM aestheticq.bills WHERE patient_id = :patientId",
-      nativeQuery = true
-  )
-  Page<Bill> findBillsByPatientIdNative(@Param("patientId") Long patientId, Pageable pageable);
+  Page<Bill> findByPatientIdOrderByCreatedAtMsDesc(
+      Long patientId,
+      Pageable pageable
+  );
 }
