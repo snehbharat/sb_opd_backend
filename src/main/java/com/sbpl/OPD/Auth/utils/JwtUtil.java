@@ -3,20 +3,23 @@ package com.sbpl.OPD.Auth.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
-
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtil {
+
+    private static final String AUTHORITIES_KEY = "SnehBharatAuth";
 
     @Value("${jwt.secret-key}")
     private String SECRET_KEY;
@@ -54,22 +57,30 @@ public class JwtUtil {
     }
 
     public String generateToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, userDetails.getUsername());
+        UsernamePasswordAuthenticationToken authenticationToken;
+        authenticationToken = new UsernamePasswordAuthenticationToken(
+            userDetails.getUsername(),
+            null
+        );
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        String authorities = authenticationToken.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.joining(","));
+        return generateTokenWithClaims(authorities, userDetails.getUsername());
     }
 
-    public String generateTokenWithClaims(Map<String, Object> claims, String subject) {
-        return createToken(claims, subject);
+    public String generateTokenWithClaims(String authorities, String subject) {
+        return createToken(authorities, subject);
     }
 
-    private String createToken(Map<String, Object> claims, String subject) {
+    private String createToken(String authorities, String subject) {
         return Jwts.builder()
-                .claims(claims)
-                .subject(subject)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis()+ TimeUnit.MINUTES.toMillis(EXPIRATION_MINUTES)))
-                .signWith(getSigningKey())
-                .compact();
+            .claim(AUTHORITIES_KEY, authorities)
+            .subject(subject)
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(EXPIRATION_MINUTES)))
+            .signWith(getSigningKey())
+            .compact();
     }
 
 
