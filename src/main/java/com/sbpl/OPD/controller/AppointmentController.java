@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -103,6 +104,20 @@ public class AppointmentController {
             @RequestParam(required = false) Integer pageSize) {
 
         return appointmentService.getAppointmentsByDoctorId(doctorId, pageNo, pageSize);
+    }
+
+    @GetMapping("/by-doctor-with-date-range")
+    public ResponseEntity<?> getAppointmentsByDoctorIdWithDateRange(
+            @RequestParam @NotNull Long doctorId,
+            @RequestParam @NotNull List<AppointmentStatus> statuses,
+            @RequestParam @NotNull LocalDate startDate,
+            @RequestParam @NotNull LocalDate endDate,
+            @RequestParam Integer pageNo,
+            @RequestParam Integer pageSize) {
+
+        return appointmentService.getAppointmentsByDoctorIdWithDateRange(
+                doctorId, statuses, startDate, endDate, pageNo, pageSize
+        );
     }
 
     @GetMapping("/by-status")

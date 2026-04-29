@@ -608,6 +608,69 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
     }
 
+    @Override
+    public ResponseEntity<?> getAppointmentsByDoctorIdWithDateRange(
+            Long doctorId, List<AppointmentStatus> statuses, LocalDate startDate, LocalDate endDate,
+            Integer pageNo, Integer pageSize) {
+
+        logger.info(
+                "Fetching appointments for doctor with date range [doctorId={}, statuses={}, startDate={}, endDate={}, pageNo={}, pageSize={}]",
+                doctorId, statuses, startDate, endDate, pageNo, pageSize
+        );
+
+        try {
+            if (doctorId == null) {
+                return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "Doctor ID is required");
+            }
+            if (statuses == null || statuses.isEmpty()) {
+                return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "At least one appointment status is required");
+            }
+            if (startDate == null || endDate == null) {
+                return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, "Start date and end date are required");
+            }
+
+            PageRequest pageRequest = PageRequest.of(
+                    pageNo != null ? pageNo : 0,
+                    pageSize != null ? pageSize : 10
+            );
+
+            LocalDateTime fromDateTime = DateUtils.getStartOfBusinessDay(startDate);
+            LocalDateTime toDateTime = DateUtils.getStartOfBusinessDay(endDate.plusDays(1));
+
+            logger.info("Date range (IST): {} to {}", startDate, endDate);
+            logger.info("DateTime range: {} to {}", fromDateTime, toDateTime);
+            logger.info("Statuses: {}", statuses);
+
+            Page<Appointment> page = appointmentRepository.findByDoctorIdAndStatusesWithDateFilter(
+                    doctorId, statuses, fromDateTime, toDateTime, pageRequest
+            );
+
+            logger.info("Found {} appointments", page.getTotalElements());
+
+            List<AppointmentDTO> dtoList = page.getContent().stream()
+                    .map(this::convertToDTO)
+                    .toList();
+
+            Map<String, Object> response = DbUtill.buildPaginatedResponse(page, dtoList);
+
+            String message = "Appointments from " + startDate + " to " + endDate +
+                    " fetched successfully (CONFIRMED first, then REQUESTED, sorted by time)";
+
+            return baseResponse.successResponse(message, response);
+
+        } catch (IllegalArgumentException e) {
+            logger.warn("Pagination validation failed | {}", e.getMessage());
+            return baseResponse.errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+
+        } catch (Exception e) {
+            logger.error("Error fetching appointments for doctorId={}, statuses={}", doctorId, statuses, e);
+            return baseResponse.errorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to fetch appointments"
+            );
+        }
+    }
+
 
     @Override
     public ResponseEntity<?> getAppointmentsByStatus(

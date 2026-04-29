@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 /**
  * This is an appointment creation service class .
@@ -35,6 +36,10 @@ public interface AppointmentService {
 
     ResponseEntity<?> getAppointmentsByDoctorId(
             Long doctorId, Integer pageNo, Integer pageSize);
+
+    ResponseEntity<?> getAppointmentsByDoctorIdWithDateRange(
+            Long doctorId, List<AppointmentStatus> statuses, LocalDate startDate, LocalDate endDate,
+            Integer pageNo, Integer pageSize);
 
 
     ResponseEntity<?> getAppointmentsByStatus(
