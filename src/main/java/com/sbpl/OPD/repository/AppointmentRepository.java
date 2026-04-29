@@ -82,6 +82,60 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             "ORDER BY a.createdAt DESC")
     Page<Appointment> findByDoctorIdWithAllRelationships(@Param("doctorId") Long doctorId, Pageable pageable);
 
+    /**
+     * Find appointments by doctor ID and status for a specific date range.
+     * Returns appointments sorted by status priority (CONFIRMED > REQUESTED > Others),
+     * then by appointmentDate ASC within each status.
+     */
+    @Query("SELECT a FROM Appointment a " +
+            "LEFT JOIN FETCH a.patient p " +
+            "LEFT JOIN FETCH p.branch " +
+            "LEFT JOIN FETCH a.doctor d " +
+            "LEFT JOIN FETCH d.branch " +
+            "LEFT JOIN FETCH a.company " +
+            "WHERE d.id = :doctorId " +
+            "AND a.status IN :statuses " +
+            "AND a.appointmentDate >= :fromDate " +
+            "AND a.appointmentDate < :toDate " +
+            "ORDER BY " +
+            "CASE a.status " +
+            "  WHEN 'CONFIRMED' THEN 1 " +
+            "  WHEN 'REQUESTED' THEN 2 " +
+            "  ELSE 3 END ASC, " +
+            "a.appointmentDate ASC")
+    Page<Appointment> findByDoctorIdAndStatusesWithDateFilter(
+            @Param("doctorId") Long doctorId,
+            @Param("statuses") List<AppointmentStatus> statuses,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate,
+            Pageable pageable);
+
+    /**
+     * Find appointments by doctor ID and status without date filter.
+     * For REQUESTED status: Today's appointments first, then future.
+     * For other statuses: Sorted by createdAt DESC.
+     */
+    @Query("SELECT a FROM Appointment a " +
+            "LEFT JOIN FETCH a.patient p " +
+            "LEFT JOIN FETCH p.branch " +
+            "LEFT JOIN FETCH a.doctor d " +
+            "LEFT JOIN FETCH d.branch " +
+            "LEFT JOIN FETCH a.company " +
+            "WHERE d.id = :doctorId " +
+            "AND a.status = :status " +
+            "ORDER BY " +
+            "CASE WHEN :status = 'REQUESTED' " +
+            "     AND a.appointmentDate >= :todayStart " +
+            "     AND a.appointmentDate < :tomorrowStart " +
+            "THEN 0 ELSE 1 END ASC, " +
+            "a.appointmentDate DESC")
+    Page<Appointment> findByDoctorIdAndStatusWithoutDateFilter(
+            @Param("doctorId") Long doctorId,
+            @Param("status") AppointmentStatus status,
+            @Param("todayStart") LocalDateTime todayStart,
+            @Param("tomorrowStart") LocalDateTime tomorrowStart,
+            Pageable pageable);
+
     @Query("SELECT a FROM Appointment a " +
             "LEFT JOIN FETCH a.patient p " +
             "LEFT JOIN FETCH p.branch " +
